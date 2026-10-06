@@ -1,0 +1,3 @@
+# Keep Unix line endings everywhere: the code runs in Linux Docker containers.
+* text=auto eol=lf
+*.png binary
