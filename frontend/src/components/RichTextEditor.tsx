@@ -54,7 +54,7 @@ export function RichTextEditor({ value, onChange }: { value: string; onChange: (
     },
   })
 
-  // Load content that arrives after the editor was created (e.g. when editing an existing post).
+  // Load content that arrives after the editor was created (e.g. when editing an existing project).
   useEffect(() => {
     if (!editor || editor.isDestroyed || value === lastEmitted.current) return
     lastEmitted.current = value

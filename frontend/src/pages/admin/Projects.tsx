@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, errorMessage, formatDate, fullName, type AdminPostRow } from '../../lib/api'
+import { api, errorMessage, formatDate, fullName, PROJECT_STATUS_LABEL, type AdminProjectRow, type ProjectStatus } from '../../lib/api'
 import { ErrorBanner } from '../../components/ui'
 
-/** `/admin/posts`: every post (published and draft) with links to edit, comments and delete. */
-export function Posts() {
-  const [posts, setPosts] = useState<AdminPostRow[] | null>(null)
+const STATUS_PILL: Record<ProjectStatus, string> = { DRAFT: 'pill-grey', OPEN: 'pill-green', CLOSED: 'pill-red' }
+
+/** `/admin/projects`: every project (draft, open and closed) with links to edit, responses and delete. */
+export function Projects() {
+  const [projects, setProjects] = useState<AdminProjectRow[] | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   const load = useCallback(() => {
-    api<{ posts: AdminPostRow[] }>('/admin/posts')
-      .then((d) => setPosts(d.posts))
+    api<{ projects: AdminProjectRow[] }>('/admin/projects')
+      .then((d) => setProjects(d.projects))
       .catch((e: Error) => setError(e.message))
   }, [])
 
@@ -31,7 +33,7 @@ export function Posts() {
     <>
       <div className="page-header">
         <h1>เรื่องรับฟังความคิดเห็น</h1>
-        <Link to="/admin/posts/new" className="btn">
+        <Link to="/admin/projects/new" className="btn">
           + สร้างเรื่องใหม่
         </Link>
       </div>
@@ -41,39 +43,37 @@ export function Posts() {
         <table>
           <thead>
             <tr>
-              <th>หัวข้อ</th>
+              <th>ชื่อเรื่อง</th>
               <th>สถานะ</th>
               <th>วันที่สร้าง</th>
-              <th/>
+              <th />
             </tr>
           </thead>
           <tbody>
-            {posts?.map((p) => (
+            {projects?.map((p) => (
               <tr key={p.id}>
                 <td>
-                  {/* Drafts have no public page yet, so only published titles link to it. */}
-                  {p.isPublished ? (
-                    <Link to={`/posts/${p.id}`}>
+                  {/* Drafts have no public page yet, so only open and closed titles link to it. */}
+                  {p.status !== 'DRAFT' ? (
+                    <Link to={`/projects/${p.id}`}>
                       <strong>{p.title}</strong>
                     </Link>
                   ) : (
                     <strong>{p.title}</strong>
                   )}
-                  <div className="muted small">โดย {fullName(p.author)}</div>
+                  <div className="muted small">โดย {fullName(p.createdBy)}</div>
                 </td>
                 <td>
-                  <span className={`pill ${p.isPublished ? 'pill-green' : 'pill-grey'}`}>
-                    {p.isPublished ? 'เผยแพร่แล้ว' : 'ฉบับร่าง'}
-                  </span>
+                  <span className={`pill ${STATUS_PILL[p.status]}`}>{PROJECT_STATUS_LABEL[p.status]}</span>
                 </td>
                 <td className="nowrap">{formatDate(p.createdAt)}</td>
                 <td className="actions">
                   <div className="action-buttons">
-                    <Link to={`/admin/posts/${p.id}/edit`} className="btn btn-sm">
+                    <Link to={`/admin/projects/${p.id}/edit`} className="btn btn-sm">
                       แก้ไข
                     </Link>
-                    <Link to={`/admin/posts/${p.id}/comments`} className="btn btn-sm btn-ghost">
-                      ความคิดเห็น ({p._count.comments})
+                    <Link to={`/admin/projects/${p.id}/responses`} className="btn btn-sm btn-ghost">
+                      คำตอบ ({p._count.responses})
                     </Link>
                     {confirmDelete === p.id ? (
                       <>
@@ -81,7 +81,7 @@ export function Posts() {
                           className="btn btn-sm btn-danger"
                           onClick={() => {
                             setConfirmDelete(null)
-                            run(() => api(`/admin/posts/${p.id}`, { method: 'DELETE' }))
+                            run(() => api(`/admin/projects/${p.id}`, { method: 'DELETE' }))
                           }}
                         >
                           ยืนยันการลบ
@@ -91,7 +91,11 @@ export function Posts() {
                         </button>
                       </>
                     ) : (
-                      <button className="btn btn-sm btn-ghost-danger" onClick={() => setConfirmDelete(p.id)}>
+                      <button
+                        className="btn btn-sm btn-ghost-danger"
+                        title={p._count.responses ? `จะลบคำตอบทั้งหมด ${p._count.responses} รายการด้วย` : undefined}
+                        onClick={() => setConfirmDelete(p.id)}
+                      >
                         ลบ
                       </button>
                     )}
@@ -99,10 +103,10 @@ export function Posts() {
                 </td>
               </tr>
             ))}
-            {posts?.length === 0 && (
+            {projects?.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted center">
-                  ยังไม่มีเรื่อง <Link to="/admin/posts/new">สร้างเรื่องแรก</Link>
+                <td colSpan={4} className="muted center">
+                  ยังไม่มีเรื่อง <Link to="/admin/projects/new">สร้างเรื่องแรก</Link>
                 </td>
               </tr>
             )}

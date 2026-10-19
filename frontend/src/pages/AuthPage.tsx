@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { api, errorMessage, type User } from '../lib/api'
+import { api, errorMessage, PHONE_PATTERN, type User } from '../lib/api'
 import { safeNext, useAuth } from '../lib/auth'
 import { ErrorBanner } from '../components/ui'
 
-/** Where to go after login: the `?next=` page if given, else the admin posts page for admins, else the landing page. */
+/** Where to go after login: the `?next=` page if given, else the admin projects page for admins, else the landing page. */
 function destination(user: User, next: string | null) {
   if (next) return safeNext(next)
-  return user.role === 'ADMIN' ? '/admin/posts' : '/'
+  return user.role === 'ADMIN' ? '/admin/projects' : '/'
 }
 
 /** `/login` (users and admins) and `/register`. */
@@ -46,7 +46,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
       <div className="auth-card card">
         <h1>{isRegister ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ'}</h1>
         <p className="muted auth-intro">
-          {next?.startsWith('/posts/')
+          {next?.startsWith('/projects/')
             ? 'กรุณาเข้าสู่ระบบเพื่อแสดงความคิดเห็น หากยังไม่มีบัญชี สามารถสมัครสมาชิกได้ด้านล่าง'
             : isRegister
               ? 'สร้างบัญชีเพื่อร่วมแสดงความคิดเห็นต่อร่างสมุดปกขาว'
@@ -69,6 +69,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             อีเมล
             <input name="email" type="email" required maxLength={255} autoComplete="email" />
           </label>
+          {isRegister && (
+            <label>
+              เบอร์โทรศัพท์
+              <input name="phone" type="tel" required maxLength={20} pattern={PHONE_PATTERN} autoComplete="tel" />
+            </label>
+          )}
           <label>
             รหัสผ่าน
             <input

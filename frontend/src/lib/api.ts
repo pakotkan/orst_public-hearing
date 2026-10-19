@@ -1,69 +1,106 @@
 export type Role = 'USER' | 'ADMIN'
+export type UserStatus = 'ACTIVE' | 'INACTIVE'
+
+/** Matches the backend `phoneField`: digits with an optional leading +, spaces and dashes allowed. */
+export const PHONE_PATTERN = '\\+?[0-9][0-9 \\-]{7,18}'
 
 export type User = { id: string; firstName: string; lastName: string; email: string; role: Role }
 
 export type Person = { id: string; firstName: string; lastName: string }
 
-export type Attachment = {
-  id: string
-  originalName: string
-  mimeType: string
-  size: number
-  url: string
+export type ProjectStatus = 'DRAFT' | 'OPEN' | 'CLOSED'
+
+export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
+  DRAFT: 'ฉบับร่าง',
+  OPEN: 'เปิดรับฟังความคิดเห็น',
+  CLOSED: 'ปิดรับฟังความคิดเห็นแล้ว',
 }
 
-/** Card on the landing page. */
-export type PostSummary = {
+/** Wording of the two answers to every topic. */
+export const AGREE_LABEL = { yes: 'เห็นด้วย', no: 'ไม่เห็นด้วย' }
+
+/** Topics a new project starts with; admins can add more. */
+export const DEFAULT_TOPIC_COUNT = 3
+
+/** Must match MAX_COMMENT_LENGTH / MAX_AGENCY_LENGTH in backend/src/lib/projects.ts. */
+export const MAX_COMMENT_LENGTH = 5000
+export const MAX_AGENCY_LENGTH = 300
+
+/** A yes/no topic in a project. */
+export type SummaryTopic = {
+  id: string
+  title: string
+  order: number
+}
+
+/** Card on the landing page. `responded` is whether the logged-in user has answered it. */
+export type ProjectCard = {
   id: string
   title: string
   excerpt: string
-  coverImage: string | null
+  status: ProjectStatus
   createdAt: string
-  author: Person | null
-  _count: { comments: number; attachments: number }
+  createdBy: Person
+  responded: boolean
+  _count: { summaryTopics: number }
 }
 
-/** Full post; `content` is sanitized HTML from the server. */
-export type Post = {
+/** Full project; `description` is sanitized HTML from the server. */
+export type Project = {
   id: string
   title: string
-  content: string
+  description: string | null
+  pdfUrl: string | null
+  status: ProjectStatus
   createdAt: string
   updatedAt: string
-  author: Person | null
-  attachments: Attachment[]
+  createdBy: Person
+  summaryTopics: SummaryTopic[]
 }
 
-export type Comment = {
+/** `additionalComment` and `relatedAgency` are only ever set when `agreement` is true. */
+export type TopicAnswer = {
+  summaryTopicId: string
+  agreement: boolean
+  additionalComment: string | null
+  relatedAgency: string | null
+}
+
+export type ProjectResponse = {
   id: string
-  content: string
+  isAnonymous: boolean
   createdAt: string
-  user: Person
+  topicAnswers: TopicAnswer[]
 }
 
-export type AdminPostRow = {
+export type AdminProjectRow = {
   id: string
   title: string
-  isPublished: boolean
+  status: ProjectStatus
   createdAt: string
   updatedAt: string
-  author: Person | null
-  _count: { comments: number; attachments: number }
+  createdBy: Person
+  _count: { summaryTopics: number; responses: number }
 }
 
-export type AdminPost = {
+export type AdminProject = {
   id: string
   title: string
-  content: string
-  isPublished: boolean
-  attachments: Attachment[]
+  description: string | null
+  pdfUrl: string | null
+  status: ProjectStatus
+  createdAt: string
+  updatedAt: string
+  summaryTopics: (SummaryTopic & { _count: { answers: number } })[]
+  _count: { responses: number }
 }
 
-export type AdminComment = {
-  id: string
-  content: string
-  createdAt: string
-  user: Person
+export type AdminResponse = ProjectResponse & { user: Person }
+
+/** Per-topic totals from /admin/projects/:id/summary. `withComment` counts yes answers that left a comment. */
+export type ResponseSummary = {
+  totalResponses: number
+  topics: Record<string, { yes: number; no: number; withComment: number; agencies: { name: string; count: number }[] }>
 }
 
 export type AdminUser = {
@@ -71,10 +108,11 @@ export type AdminUser = {
   firstName: string
   lastName: string
   email: string
+  phone: string
   role: Role
-  isBanned: boolean
+  status: UserStatus
   createdAt: string
-  _count: { comments: number }
+  _count: { responses: number }
 }
 
 export type Paged<K extends string, T> = { [key in K]: T[] } & { total: number; page: number; pageSize: number }
@@ -121,15 +159,6 @@ export function formatLongDate(iso: string) {
 export function fullName(person: Pick<Person, 'firstName' | 'lastName'> | null | undefined) {
   return person ? `${person.firstName} ${person.lastName}`.trim() : 'ไม่ระบุ'
 }
-
-export function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-}
-
-export const isImage = (a: Attachment) => a.mimeType.startsWith('image/')
-export const isPdf = (a: Attachment) => a.mimeType === 'application/pdf'
 
 export const errorMessage = (e: unknown, fallback = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง') =>
   e instanceof Error ? e.message : fallback

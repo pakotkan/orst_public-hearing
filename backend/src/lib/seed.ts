@@ -8,8 +8,8 @@ export async function ensureAdmin() {
 
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) {
-    if (existing.role !== 'ADMIN' || existing.isBanned) {
-      await prisma.user.update({ where: { email }, data: { role: 'ADMIN', isBanned: false } })
+    if (existing.role !== 'ADMIN' || existing.status !== 'ACTIVE') {
+      await prisma.user.update({ where: { email }, data: { role: 'ADMIN', status: 'ACTIVE' } })
     }
     return
   }
@@ -20,6 +20,8 @@ export async function ensureAdmin() {
       lastName: env.ADMIN_LAST_NAME,
       email,
       passwordHash: await Bun.password.hash(env.ADMIN_PASSWORD),
+      // The seeded admin has no phone number; it can be added on the admin users page.
+      phone: '',
       role: 'ADMIN',
     },
   })

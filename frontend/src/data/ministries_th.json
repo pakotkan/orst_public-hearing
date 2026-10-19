@@ -1,0 +1,144 @@
+{
+  "ministries_of_thailand": [
+    {
+      "id": 1,
+      "name_th": "สำนักนายกรัฐมนตรี",
+      "name_en": "Office of the Prime Minister",
+      "short_th": "นร.",
+      "short_en": "OPM"
+    },
+    {
+      "id": 2,
+      "name_th": "กระทรวงกลาโหม",
+      "name_en": "Ministry of Defence",
+      "short_th": "กห.",
+      "short_en": "MOD"
+    },
+    {
+      "id": 3,
+      "name_th": "กระทรวงการคลัง",
+      "name_en": "Ministry of Finance",
+      "short_th": "กค.",
+      "short_en": "MOF"
+    },
+    {
+      "id": 4,
+      "name_th": "กระทรวงการต่างประเทศ",
+      "name_en": "Ministry of Foreign Affairs",
+      "short_th": "กต.",
+      "short_en": "MFA"
+    },
+    {
+      "id": 5,
+      "name_th": "กระทรวงการท่องเที่ยวและกีฬา",
+      "name_en": "Ministry of Tourism and Sports",
+      "short_th": "กก.",
+      "short_en": "MOTS"
+    },
+    {
+      "id": 6,
+      "name_th": "กระทรวงการพัฒนาสังคมและความมั่นคงของมนุษย์",
+      "name_en": "Ministry of Social Development and Human Security",
+      "short_th": "พม.",
+      "short_en": "MSDHS"
+    },
+    {
+      "id": 7,
+      "name_th": "กระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม",
+      "name_en": "Ministry of Higher Education, Science, Research and Innovation",
+      "short_th": "อว.",
+      "short_en": "MHESI"
+    },
+    {
+      "id": 8,
+      "name_th": "กระทรวงเกษตรและสหกรณ์",
+      "name_en": "Ministry of Agriculture and Cooperatives",
+      "short_th": "กษ.",
+      "short_en": "MOAC"
+    },
+    {
+      "id": 9,
+      "name_th": "กระทรวงคมนาคม",
+      "name_en": "Ministry of Transport",
+      "short_th": "คค.",
+      "short_en": "MOT"
+    },
+    {
+      "id": 10,
+      "name_th": "กระทรวงทรัพยากรธรรมชาติและสิ่งแวดล้อม",
+      "name_en": "Ministry of Natural Resources and Environment",
+      "short_th": "ทส.",
+      "short_en": "MNRE"
+    },
+    {
+      "id": 11,
+      "name_th": "กระทรวงดิจิทัลเพื่อเศรษฐกิจและสังคม",
+      "name_en": "Ministry of Digital Economy and Society",
+      "short_th": "ดีอี",
+      "short_en": "MDES"
+    },
+    {
+      "id": 12,
+      "name_th": "กระทรวงพลังงาน",
+      "name_en": "Ministry of Energy",
+      "short_th": "พน.",
+      "short_en": "MOEN"
+    },
+    {
+      "id": 13,
+      "name_th": "กระทรวงพาณิชย์",
+      "name_en": "Ministry of Commerce",
+      "short_th": "พณ.",
+      "short_en": "MOC"
+    },
+    {
+      "id": 14,
+      "name_th": "กระทรวงมหาดไทย",
+      "name_en": "Ministry of Interior",
+      "short_th": "มท.",
+      "short_en": "MOI"
+    },
+    {
+      "id": 15,
+      "name_th": "กระทรวงยุติธรรม",
+      "name_en": "Ministry of Justice",
+      "short_th": "ยธ.",
+      "short_en": "MOJ"
+    },
+    {
+      "id": 16,
+      "name_th": "กระทรวงแรงงาน",
+      "name_en": "Ministry of Labour",
+      "short_th": "รง.",
+      "short_en": "MOL"
+    },
+    {
+      "id": 17,
+      "name_th": "กระทรวงวัฒนธรรม",
+      "name_en": "Ministry of Culture",
+      "short_th": "วธ.",
+      "short_en": "MOC"
+    },
+    {
+      "id": 18,
+      "name_th": "กระทรวงศึกษาธิการ",
+      "name_en": "Ministry of Education",
+      "short_th": "ศธ.",
+      "short_en": "MOE"
+    },
+    {
+      "id": 19,
+      "name_th": "กระทรวงสาธารณสุข",
+      "name_en": "Ministry of Public Health",
+      "short_th": "สธ.",
+      "short_en": "MOPH"
+    },
+    {
+      "id": 20,
+      "name_th": "กระทรวงอุตสาหกรรม",
+      "name_en": "Ministry of Industry",
+      "short_th": "อก.",
+      "short_en": "MIND"
+    }
+  ]
+}

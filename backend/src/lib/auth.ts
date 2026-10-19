@@ -26,11 +26,11 @@ export const authPlugin = new Elysia({ name: 'auth' })
 
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { ...publicUserSelect, isBanned: true },
+      select: { ...publicUserSelect, status: true },
     })
-    if (!user || user.isBanned) return { user: null as AuthUser | null }
+    if (!user || user.status !== 'ACTIVE') return { user: null as AuthUser | null }
 
-    const { isBanned: _, ...authUser } = user
+    const { status: _, ...authUser } = user
     return { user: authUser as AuthUser | null }
   })
 

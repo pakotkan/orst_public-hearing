@@ -4,62 +4,35 @@ import { randomUUID } from 'node:crypto'
 import { env } from './env'
 import { HttpError } from './errors'
 
-export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
-export const ATTACHMENT_FOLDER = 'posts'
+const MAX_PDF_BYTES = 10 * 1024 * 1024
 
-/** Allowed attachment extensions and the MIME type we record for each. HTML/SVG are excluded on purpose. */
-const ALLOWED: Record<string, string> = {
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  png: 'image/png',
-  gif: 'image/gif',
-  webp: 'image/webp',
-  pdf: 'application/pdf',
-  doc: 'application/msword',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  xls: 'application/vnd.ms-excel',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  ppt: 'application/vnd.ms-powerpoint',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  txt: 'text/plain',
-  csv: 'text/csv',
-  zip: 'application/zip',
-}
-
-export const ALLOWED_EXTENSIONS = Object.keys(ALLOWED)
+/** Project PDFs live in the old `posts` folder, so files uploaded before the move keep their URLs. */
+const PDF_FOLDER = 'posts'
+const PDF_URL_PREFIX = `/uploads/${PDF_FOLDER}/`
 
 const uploadRoot = resolve(env.UPLOAD_DIR)
 
-export type SavedFile = { originalName: string; storedName: string; mimeType: string; size: number }
-
-/** Saves an uploaded file under UPLOAD_DIR/<folder>/ with a random name. */
-export async function saveFile(file: File, folder: string): Promise<SavedFile> {
-  const originalName = basename(file.name || 'file').slice(0, 255)
-  const ext = extname(originalName).slice(1).toLowerCase()
-  const mimeType = ALLOWED[ext]
-  if (!mimeType) throw new HttpError(400, `ไม่รองรับไฟล์ประเภทนี้ ประเภทที่รองรับ: ${ALLOWED_EXTENSIONS.join(', ')}`)
+/** Saves an uploaded PDF under UPLOAD_DIR/posts/ with a random name and returns its public URL. */
+export async function savePdf(file: File): Promise<string> {
+  const ext = extname(file.name || '').slice(1).toLowerCase()
+  if (ext !== 'pdf') throw new HttpError(400, 'รองรับเฉพาะไฟล์ PDF')
   if (file.size === 0) throw new HttpError(400, 'ไฟล์ว่างเปล่า')
-  if (file.size > MAX_ATTACHMENT_BYTES) throw new HttpError(400, 'ไฟล์ต้องมีขนาดไม่เกิน 10 MB')
+  if (file.size > MAX_PDF_BYTES) throw new HttpError(400, 'ไฟล์ต้องมีขนาดไม่เกิน 10 MB')
+  // Check the file really is a PDF, not just named like one.
+  const magic = new TextDecoder().decode(await file.slice(0, 5).arrayBuffer())
+  if (magic !== '%PDF-') throw new HttpError(400, 'ไฟล์นี้ไม่ใช่ PDF ที่ถูกต้อง')
 
-  const dir = join(uploadRoot, folder)
+  const dir = join(uploadRoot, PDF_FOLDER)
   await mkdir(dir, { recursive: true })
-  const storedName = `${randomUUID()}.${ext}`
+  const storedName = `${randomUUID()}.pdf`
   await Bun.write(join(dir, storedName), file)
-  return { originalName, storedName, mimeType, size: file.size }
+  return PDF_URL_PREFIX + storedName
 }
 
-export async function deleteFile(storedName: string, folder: string) {
-  await unlink(join(uploadRoot, folder, basename(storedName))).catch(() => {})
-}
-
-export function publicUrl(storedName: string, folder: string) {
-  return `/uploads/${folder}/${storedName}`
-}
-
-/** Adds the public download URL to an attachment row. */
-export function withUrl<T extends { storedName: string }>(attachment: T) {
-  const { storedName, ...rest } = attachment
-  return { ...rest, url: publicUrl(storedName, ATTACHMENT_FOLDER) }
+/** Deletes a PDF previously returned by `savePdf`. URLs that aren't ours are ignored. */
+export async function deletePdf(url: string | null | undefined) {
+  if (!url?.startsWith(PDF_URL_PREFIX)) return
+  await unlink(join(uploadRoot, PDF_FOLDER, basename(url))).catch(() => {})
 }
 
 /** Resolves a /uploads/* request path to a file on disk, refusing path traversal. */

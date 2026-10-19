@@ -4,7 +4,7 @@ import { HttpError } from './lib/errors'
 import { resolveUploadPath } from './lib/uploads'
 import { ensureAdmin } from './lib/seed'
 import { authRoutes } from './routes/auth'
-import { postRoutes } from './routes/posts'
+import { projectRoutes } from './routes/projects'
 import { adminRoutes } from './routes/admin'
 
 /** Thai names for request fields, used in validation error messages. */
@@ -13,9 +13,13 @@ const FIELD_LABELS: Record<string, string> = {
   lastName: 'นามสกุล',
   email: 'อีเมล',
   password: 'รหัสผ่าน',
+  phone: 'เบอร์โทรศัพท์',
   role: 'บทบาท',
-  title: 'หัวข้อ',
-  content: 'เนื้อหา',
+  status: 'สถานะ',
+  title: 'ชื่อเรื่อง',
+  description: 'รายละเอียด',
+  summaryTopics: 'หัวข้อ',
+  topicAnswers: 'คำตอบ',
   file: 'ไฟล์',
   page: 'หน้า',
 }
@@ -23,7 +27,7 @@ const FIELD_LABELS: Record<string, string> = {
 const api = new Elysia({ prefix: '/api' })
   .get('/health', () => ({ ok: true }))
   .use(authRoutes)
-  .use(postRoutes)
+  .use(projectRoutes)
   .use(adminRoutes)
 
 const app = new Elysia()
@@ -34,7 +38,8 @@ const app = new Elysia()
     }
     if (code === 'VALIDATION') {
       set.status = 422
-      const field = error.valueError?.path?.replace(/^\//, '')
+      // Nested paths like /summaryTopics/0/title are reported by their top-level field.
+      const field = error.valueError?.path?.replace(/^\//, '').split('/')[0]
       return { error: field ? `ข้อมูล "${FIELD_LABELS[field] ?? field}" ไม่ถูกต้อง` : 'ข้อมูลไม่ถูกต้อง' }
     }
     if (code === 'NOT_FOUND') {
