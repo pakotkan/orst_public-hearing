@@ -19,7 +19,7 @@ export function sanitizeRichText(html: string): string {
 
 const ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' }
 
-/** Plain-text preview of rich-text HTML for post cards. */
+/** Plain-text preview of rich-text HTML for project cards. */
 export function excerpt(html: string, length = 220): string {
   const text = sanitizeHtml(html.replace(/<\/(p|h\d|li|blockquote)>/g, ' '), { allowedTags: [], allowedAttributes: {} })
     .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m) => ENTITIES[m] ?? m)

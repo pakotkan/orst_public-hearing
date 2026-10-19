@@ -1,35 +1,36 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, formatLongDate, fullName, type PostSummary } from '../lib/api'
+import { api, formatLongDate, PROJECT_STATUS_LABEL, type ProjectCard } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { SITE_FULL_NAME } from '../lib/site'
 import { BookIcon, ErrorBanner, Loading } from '../components/ui'
 
-/** Landing page (`/`): banner with search, then the list of published posts. No login required. */
-export function PostList() {
-  const [posts, setPosts] = useState<PostSummary[] | null>(null)
+/** Landing page (`/`): banner with search, then the list of open and closed projects. No login required. */
+export function ProjectList() {
+  const [projects, setProjects] = useState<ProjectCard[] | null>(null)
   const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const { user, loading: authLoading } = useAuth()
 
-  // Comment counts depend on who is viewing (admin: all, user: own, guest: hidden), so refetch on login/logout.
+  // "Already answered" depends on who is viewing, so refetch on login/logout.
   useEffect(() => {
     if (authLoading) return
-    api<{ posts: PostSummary[] }>('/posts')
-      .then((d) => setPosts(d.posts))
+    api<{ projects: ProjectCard[] }>('/projects')
+      .then((d) => setProjects(d.projects))
       .catch((e: Error) => setError(e.message))
   }, [authLoading, user?.id])
 
   const term = search.trim().toLowerCase()
   const shown = term
-    ? posts?.filter((p) => p.title.toLowerCase().includes(term) || p.excerpt.toLowerCase().includes(term))
-    : posts
+    ? projects?.filter((p) => p.title.toLowerCase().includes(term) || p.excerpt.toLowerCase().includes(term))
+    : projects
 
   return (
     <>
       <section className="hero-banner">
         <div className="container">
           <span className="hero-eyebrow">รับฟังความคิดเห็นของประชาชน</span>
-          <h1>ประชาพิจารณ์ สมุดปกขาว (White Paper)</h1>
+          <h1>{SITE_FULL_NAME}</h1>
           <p>อ่านร่างสมุดปกขาวและร่วมแสดงความคิดเห็น เพื่อนำไปใช้ประกอบการพิจารณาปรับปรุงให้สมบูรณ์ยิ่งขึ้น</p>
           <form className="search-box" role="search" onSubmit={(e) => e.preventDefault()}>
             <input
@@ -52,33 +53,35 @@ export function PostList() {
           </div>
 
           <ErrorBanner message={error} />
-          {!posts && !error && <Loading />}
-          {posts?.length === 0 && <p className="empty-state">ยังไม่มีเรื่องที่เปิดรับฟังความคิดเห็น</p>}
-          {posts && posts.length > 0 && shown?.length === 0 && (
+          {!projects && !error && <Loading />}
+          {projects?.length === 0 && <p className="empty-state">ยังไม่มีเรื่องที่เปิดรับฟังความคิดเห็น</p>}
+          {projects && projects.length > 0 && shown?.length === 0 && (
             <p className="empty-state">ไม่พบเรื่องที่ตรงกับ “{search.trim()}”</p>
           )}
 
           <ul className="hearing-list">
-            {shown?.map((post) => (
-              <li key={post.id}>
-                <Link to={`/posts/${post.id}`} className="hearing-card">
-                  {post.coverImage ? (
-                    <img src={post.coverImage} alt="" className="hearing-thumb" />
-                  ) : (
-                    <div className="hearing-thumb hearing-thumb-placeholder">
-                      <BookIcon color="currentColor" />
-                    </div>
-                  )}
+            {shown?.map((project) => (
+              <li key={project.id}>
+                <Link to={`/projects/${project.id}`} className="hearing-card">
+                  <div className="hearing-thumb hearing-thumb-placeholder">
+                    <BookIcon />
+                  </div>
                   <div className="hearing-body">
-                    <span className="status status-open">เปิดรับฟังความคิดเห็น</span>
-                    <h3>{post.title}</h3>
-                    {post.excerpt && <p className="clamp">{post.excerpt}</p>}
+                    <div className="row">
+                      <span className={`status ${project.status === 'OPEN' ? 'status-open' : 'status-closed'}`}>
+                        {PROJECT_STATUS_LABEL[project.status]}
+                      </span>
+                      {project.responded && <span className="pill pill-blue">คุณตอบแล้ว</span>}
+                    </div>
+                    <h3>{project.title}</h3>
+                    {project.excerpt && <p className="clamp">{project.excerpt}</p>}
                     <div className="hearing-meta">
-                      <span>📅 เผยแพร่ {formatLongDate(post.createdAt)}</span>
+                      <span>📅 เผยแพร่ {formatLongDate(project.createdAt)}</span>
                     </div>
                     <div className="hearing-footer">
-                      <div className="hearing-meta"></div>
-                      <span className="hearing-cta">อ่านและแสดงความคิดเห็น →</span>
+                      <span className="hearing-cta">
+                        {project.status !== 'OPEN' ? 'อ่านรายละเอียด →' : project.responded ? 'ดูหรือแก้ไขคำตอบ →' : 'อ่านและแสดงความคิดเห็น →'}
+                      </span>
                     </div>
                   </div>
                 </Link>

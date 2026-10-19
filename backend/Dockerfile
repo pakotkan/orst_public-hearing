@@ -6,8 +6,9 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
+COPY package.json bun.lock ./
+# Runtime dependencies only; the Prisma CLI is one of them because migrations run on start.
+RUN bun install --frozen-lockfile --production
 
 COPY prisma ./prisma
 RUN bunx prisma generate

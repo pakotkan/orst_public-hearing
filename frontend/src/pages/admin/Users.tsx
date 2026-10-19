@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, errorMessage, formatDate, fullName, qs, type AdminUser, type Paged, type Role } from '../../lib/api'
+import { api, errorMessage, formatDate, fullName, PHONE_PATTERN, qs, type AdminUser, type Paged, type Role, type UserStatus } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { ErrorBanner, Pagination } from '../../components/ui'
 
@@ -8,14 +8,15 @@ type Draft = {
   firstName: string
   lastName: string
   email: string
+  phone: string
   password: string
   role: Role
-  isBanned: boolean
+  status: UserStatus
 }
 
-const EMPTY_DRAFT: Draft = { firstName: '', lastName: '', email: '', password: '', role: 'USER', isBanned: false }
+const EMPTY_DRAFT: Draft = { firstName: '', lastName: '', email: '', phone: '', password: '', role: 'USER', status: 'ACTIVE' }
 
-/** `/admin/users`: add, edit and delete user accounts. */
+/** `/admin/users`: add, edit and deactivate user accounts (deleting is a soft delete). */
 export function Users() {
   const currentUserId = useAuth().user?.id
   const [query, setQuery] = useState({ q: '', page: 1 })
@@ -36,7 +37,7 @@ export function Users() {
 
   function edit(u: AdminUser) {
     setFormError('')
-    setDraft({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email, password: '', role: u.role, isBanned: u.isBanned })
+    setDraft({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email, phone: u.phone, password: '', role: u.role, status: u.status })
   }
 
   async function save(e: React.FormEvent) {
@@ -51,7 +52,7 @@ export function Users() {
           body: JSON.stringify({ ...fields, ...(password ? { password } : {}) }),
         })
       } else {
-        const { isBanned: _, ...createFields } = fields
+        const { status: _, ...createFields } = fields
         await api('/admin/users', { method: 'POST', body: JSON.stringify({ ...createFields, password }) })
       }
       setDraft(null)
@@ -138,6 +139,17 @@ export function Users() {
           </div>
           <div className="form-row">
             <label>
+              เบอร์โทรศัพท์
+              <input
+                type="tel"
+                value={draft.phone}
+                onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+                required
+                maxLength={20}
+                pattern={PHONE_PATTERN}
+              />
+            </label>
+            <label>
               บทบาท
               <select
                 value={draft.role}
@@ -149,14 +161,16 @@ export function Users() {
               </select>
             </label>
             {draft.id && (
-              <label className="checkbox align-end">
-                <input
-                  type="checkbox"
-                  checked={draft.isBanned}
+              <label>
+                สถานะ
+                <select
+                  value={draft.status}
                   disabled={editingSelf}
-                  onChange={(e) => setDraft({ ...draft, isBanned: e.target.checked })}
-                />
-                ระงับการใช้งาน (เข้าสู่ระบบไม่ได้)
+                  onChange={(e) => setDraft({ ...draft, status: e.target.value as UserStatus })}
+                >
+                  <option value="ACTIVE">ใช้งานได้</option>
+                  <option value="INACTIVE">ปิดการใช้งาน (เข้าสู่ระบบไม่ได้)</option>
+                </select>
               </label>
             )}
           </div>
@@ -177,7 +191,7 @@ export function Users() {
           setQuery({ q: search, page: 1 })
         }}
       >
-        <input placeholder="ค้นหาชื่อหรืออีเมล…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input placeholder="ค้นหาชื่อ อีเมล หรือเบอร์โทรศัพท์…" value={search} onChange={(e) => setSearch(e.target.value)} />
         <button className="btn">ค้นหา</button>
       </form>
       <ErrorBanner message={error} />
@@ -188,10 +202,9 @@ export function Users() {
             <tr>
               <th>ชื่อ-นามสกุล</th>
               <th>อีเมล</th>
+              <th>เบอร์โทรศัพท์</th>
               <th>บทบาท</th>
               <th>สถานะ</th>
-              <th>ความคิดเห็น</th>
-              <th>วันที่สมัคร</th>
               <th />
             </tr>
           </thead>
@@ -204,22 +217,21 @@ export function Users() {
                     {fullName(u)} {isSelf && <span className="muted small">(คุณ)</span>}
                   </td>
                   <td>{u.email}</td>
+                  <td className="nowrap">{u.phone || <span className="muted">-</span>}</td>
                   <td>
                     <span className={`pill ${u.role === 'ADMIN' ? 'pill-blue' : 'pill-grey'}`}>{u.role === 'ADMIN' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งานทั่วไป'}</span>
                   </td>
                   <td>
-                    <span className={`pill ${u.isBanned ? 'pill-red' : 'pill-green'}`}>
-                      {u.isBanned ? 'ระงับการใช้งาน' : 'ใช้งานได้'}
+                    <span className={`pill ${u.status === 'ACTIVE' ? 'pill-green' : 'pill-red'}`}>
+                      {u.status === 'ACTIVE' ? 'ใช้งานได้' : 'ปิดการใช้งาน'}
                     </span>
                   </td>
-                  <td>{u._count.comments}</td>
-                  <td className="nowrap">{formatDate(u.createdAt)}</td>
                   <td className="actions">
                     <div className="action-buttons">
                       <button className="btn btn-sm" onClick={() => edit(u)}>
                         แก้ไข
                       </button>
-                      {!isSelf &&
+                      {!isSelf && u.status === 'ACTIVE' &&
                         (confirmDelete === u.id ? (
                           <>
                             <button className="btn btn-sm btn-danger" onClick={() => remove(u.id)}>
@@ -241,7 +253,7 @@ export function Users() {
             })}
             {data?.users.length === 0 && (
               <tr>
-                <td colSpan={7} className="muted center">
+                <td colSpan={6} className="muted center">
                   ไม่พบผู้ใช้งาน
                 </td>
               </tr>

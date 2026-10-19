@@ -19,7 +19,7 @@ export function PublicLayout() {
             {loading ? null : user ? (
               <>
                 {user.role === 'ADMIN' && (
-                  <NavLink to="/admin/posts" className="nav-link">
+                  <NavLink to="/admin/projects" className="nav-link">
                     ระบบจัดการ
                   </NavLink>
                 )}

@@ -36,14 +36,9 @@ export function Loading() {
   return <p className="muted center">กำลังโหลด…</p>
 }
 
-/** Open-book icon used as the site logo and as a placeholder for posts without a cover image. */
-export function BookIcon({ color = '#fff' }: { color?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M2 4.5h6a4 4 0 0 1 4 4V20a3 3 0 0 0-3-3H2z" />
-      <path d="M22 4.5h-6a4 4 0 0 0-4 4V20a3 3 0 0 1 3-3h7z" />
-    </svg>
-  )
+/** Site logo image (public/favicon.png), also used as the thumbnail on project cards. */
+export function BookIcon() {
+  return <img src="/favicon.png" alt="" aria-hidden style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
 }
 
 /** Logo mark plus the site name, linking to `to`. */

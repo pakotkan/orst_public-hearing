@@ -7,65 +7,101 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
+enum UserRole {
   ADMIN
+  USER
+}
+
+/// INACTIVE is a soft delete: the account can't log in, but its data is kept.
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProjectStatus {
+  DRAFT
+  OPEN
+  CLOSED
 }
 
 model User {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   firstName    String
   lastName     String
-  email        String    @unique
+  email        String     @unique
   passwordHash String
-  role         Role      @default(USER)
-  isBanned     Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  posts        Post[]
-  comments     Comment[]
+  phone        String
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  projects     Project[]
+  responses    Response[]
 }
 
-/// An article published by an admin. `content` is sanitized rich-text HTML.
-model Post {
-  id          String       @id @default(cuid())
-  title       String
-  content     String       @default("")
-  isPublished Boolean      @default(true)
-  authorId    String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  author      User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  comments    Comment[]
-  attachments Attachment[]
+/// A public hearing topic that users respond to. `description` is sanitized rich-text HTML.
+/// `pdfUrl` is the project's document, uploaded to UPLOAD_DIR/posts/ and served under /uploads/posts/.
+model Project {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  pdfUrl        String?
+  status        ProjectStatus  @default(DRAFT)
+  createdById   String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  createdBy     User           @relation(fields: [createdById], references: [id])
+  summaryTopics SummaryTopic[]
+  responses     Response[]
 
-  @@index([isPublished, createdAt])
+  @@index([status, createdAt])
+  @@index([createdById])
 }
 
-/// A file uploaded to a post, stored on local disk at UPLOAD_DIR/posts/<storedName>.
-model Attachment {
-  id           String   @id @default(cuid())
-  postId       String
-  originalName String
-  storedName   String   @unique
-  mimeType     String
-  size         Int
-  createdAt    DateTime @default(now())
-  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+/// A yes/no topic in a project. New projects start with 3; admins can add more.
+model SummaryTopic {
+  id        String        @id @default(cuid())
+  projectId String
+  title     String
+  order     Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  answers   TopicAnswer[]
 
-  @@index([postId])
+  @@unique([projectId, order])
+  @@index([projectId])
 }
 
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  userId    String
-  postId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+/// One user's submission to a project; a user can respond to each project once.
+model Response {
+  id           String        @id @default(cuid())
+  projectId    String
+  userId       String
+  isAnonymous  Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicAnswers TopicAnswer[]
 
-  @@index([postId, createdAt])
+  @@unique([projectId, userId])
   @@index([userId])
+}
+
+/// Agree or not with one topic. `additionalComment` and `relatedAgency` are optional and only allowed
+/// when `agreement` is true (enforced by a CHECK constraint in the migration).
+model TopicAnswer {
+  id                String       @id @default(cuid())
+  responseId        String
+  summaryTopicId    String
+  agreement         Boolean /// เห็นด้วยหรือไม่
+  additionalComment String?      @db.Text /// ความเห็นเพิ่มเติม
+  relatedAgency     String?      @db.Text /// หน่วยงานที่คิดว่าเกี่ยวข้อง: a ministry's Thai name, or free text for "other"
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  response          Response     @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  summaryTopic      SummaryTopic @relation(fields: [summaryTopicId], references: [id], onDelete: Cascade)
+
+  @@unique([responseId, summaryTopicId])
+  @@index([summaryTopicId, agreement])
 }

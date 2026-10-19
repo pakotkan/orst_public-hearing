@@ -1,8 +1,8 @@
 # Build context is the repository root (see docker-compose.yml).
 FROM node:22-alpine AS frontend-build
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 

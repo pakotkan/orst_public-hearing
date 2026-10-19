@@ -14,3 +14,11 @@ export const env = {
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
 }
+
+// Refuse to start in production with the placeholder values from .env.example.
+if (process.env.NODE_ENV === 'production') {
+  if (env.JWT_SECRET === 'CHANGE_ME' || env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters in production (openssl rand -hex 32)')
+  }
+  if (env.ADMIN_PASSWORD === 'CHANGE_ME') throw new Error('ADMIN_PASSWORD is still CHANGE_ME')
+}

@@ -16,9 +16,9 @@ export function AdminLayout() {
   return (
     <div className="layout">
       <aside className="sidebar">
-        <Brand to="/admin/posts" />
+        <Brand to="/admin/projects" />
         <nav>
-          <NavLink to="/admin/posts">เรื่องรับฟังความคิดเห็น</NavLink>
+          <NavLink to="/admin/projects">เรื่องรับฟังความคิดเห็น</NavLink>
           <NavLink to="/admin/users">ผู้ใช้งาน</NavLink>
         </nav>
         <div className="sidebar-footer">

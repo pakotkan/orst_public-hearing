@@ -15,6 +15,12 @@ const cookieOptions = {
 export const nameField = t.String({ minLength: 1, maxLength: 100 })
 export const emailField = t.String({ format: 'email', maxLength: 255 })
 export const passwordField = t.String({ minLength: 8, maxLength: 128 })
+/** Digits with an optional leading +; spaces and dashes are allowed and stripped by `normalizePhone`. */
+export const phoneField = t.String({ maxLength: 20, pattern: '^\\+?[0-9][0-9 -]{7,18}$' })
+
+export function normalizePhone(phone: string) {
+  return phone.replace(/[\s-]/g, '')
+}
 
 export const authRoutes = new Elysia({ prefix: '/auth' })
   .use(authPlugin)
@@ -30,7 +36,13 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       if (existing) throw new HttpError(409, 'อีเมลนี้ถูกใช้สมัครสมาชิกแล้ว')
 
       const user = await prisma.user.create({
-        data: { firstName, lastName, email, passwordHash: await Bun.password.hash(body.password) },
+        data: {
+          firstName,
+          lastName,
+          email,
+          phone: normalizePhone(body.phone),
+          passwordHash: await Bun.password.hash(body.password),
+        },
         select: publicUserSelect,
       })
       token.set({ value: await jwt.sign({ sub: user.id }), ...cookieOptions })
@@ -41,6 +53,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         firstName: nameField,
         lastName: nameField,
         email: emailField,
+        phone: phoneField,
         password: passwordField,
       }),
     },
@@ -52,7 +65,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       const user = await prisma.user.findUnique({ where: { email } })
       const valid = user ? await Bun.password.verify(body.password, user.passwordHash) : false
       if (!user || !valid) throw new HttpError(401, 'อีเมลหรือรหัสผ่านไม่ถูกต้อง')
-      if (user.isBanned) throw new HttpError(403, 'บัญชีนี้ถูกระงับการใช้งาน')
+      if (user.status !== 'ACTIVE') throw new HttpError(403, 'บัญชีนี้ถูกปิดการใช้งาน')
 
       token.set({ value: await jwt.sign({ sub: user.id }), ...cookieOptions })
       const { id, firstName, lastName, role } = user

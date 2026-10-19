@@ -10,5 +10,5 @@ export const publicUserSelect = {
   role: true,
 } as const
 
-/** What other visitors may see about a comment or post author. */
+/** What may be shown about another user, e.g. a project's creator or a response's author (to admins). */
 export const authorSelect = { id: true, firstName: true, lastName: true } as const
